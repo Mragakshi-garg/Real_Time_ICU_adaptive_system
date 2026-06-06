@@ -5,7 +5,8 @@ import threading
 import redis.asyncio as aioredis
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from simulator import run as simulator_run
+# from simulator import run as simulator_run
+from src.simulator import run as simulator_run
 
 app = FastAPI()
 @app.on_event("startup")
