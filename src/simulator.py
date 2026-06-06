@@ -9,7 +9,7 @@ from model import RiskPredictor
 NUM_PATIENTS = 50
 REDIS_CHANNEL = 'icu_vitals'
 
-class Patient:
+class ICUSimulator:
     def __init__(self, pid):
         self.id = f"Patient #{pid:03d}"
         self.state = 'stable'
@@ -100,7 +100,7 @@ def run():
     r = redis.Redis(host=redis_host, port=redis_port,
                     decode_responses=True)
 
-    patients = [Patient(i + 1) for i in range(NUM_PATIENTS)]
+    patients = [ICUSimulator(i + 1) for i in range(NUM_PATIENTS)]
     print(f"Streaming {NUM_PATIENTS} patients → Redis "
           f"[{redis_host}:{redis_port}] channel '{REDIS_CHANNEL}'")
 
