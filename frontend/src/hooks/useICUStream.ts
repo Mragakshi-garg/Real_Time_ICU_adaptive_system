@@ -23,7 +23,7 @@ export function useICUStream() {
 
   useEffect(() => {
     function connect() {
-      ws.current = new WebSocket('ws://localhost:8000/ws')
+      ws.current = new WebSocket('wss://real-time-icu-api.onrender.com/ws')
 
       ws.current.onopen = () => {
         console.log('Connected to ICU stream')
@@ -62,7 +62,7 @@ export function useICUStream() {
 
   const dismissAlarm = async (subjectId: string) => {
     await fetch(
-      `http://localhost:8000/dismiss/${encodeURIComponent(subjectId)}`,
+      `https://real-time-icu-api.onrender.com/dismiss/${encodeURIComponent(subjectId)}`,
       { method: 'POST' }
     )
   }
