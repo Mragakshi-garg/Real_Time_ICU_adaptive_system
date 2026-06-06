@@ -1,12 +1,20 @@
 import os
 import json
 import asyncio
+import threading
 import redis.asyncio as aioredis
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from simulator import run as simulator_run
 
 app = FastAPI()
-
+@app.on_event("startup")
+async def startup_event():
+    threading.Thread(
+        target=simulator_run,
+        daemon=True
+    ).start()
+    print("ICU Simulator Started")
 # Allow your Lovable frontend to connect from any origin
 app.add_middleware(
     CORSMiddleware,
