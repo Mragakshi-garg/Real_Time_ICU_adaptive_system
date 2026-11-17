@@ -39,6 +39,7 @@ class ICUConsumer:
 
         # Initialize ML prediction model
         self.predictor = RiskPredictor()
+        self.last_disk_write = 0.0
 
     def process_event(self, event):
         """Update state based on a new event."""
@@ -98,8 +99,13 @@ class ICUConsumer:
         # Dump state to JSON for Dashboard to read (poor man's Redis)
         self._write_state_to_file()
         
-    def _write_state_to_file(self):
-        # We write atomic dumps so streamlit can read them safely
+    def _write_state_to_file(self, force=False):
+        # Throttle atomic dumps to at most twice a second to avoid blocking consumer throughput
+        now = time.time()
+        if not force and (now - self.last_disk_write < 0.5):
+            return
+        self.last_disk_write = now
+
         dump_data = {}
         for stay_id, s in self.patient_state.items():
             if s['subject_id'] is not None:

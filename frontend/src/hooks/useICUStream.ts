@@ -21,12 +21,16 @@ export function useICUStream() {
   const [connected, setConnected] = useState(false)
   const ws = useRef<WebSocket | null>(null)
 
+  const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  const WS_URL = (import.meta as any).env?.VITE_WS_URL || (isLocal ? 'ws://localhost:8000/ws' : 'wss://real-time-icu-api.onrender.com/ws')
+  const API_URL = (import.meta as any).env?.VITE_API_URL || (isLocal ? 'http://localhost:8000' : 'https://real-time-icu-api.onrender.com')
+
   useEffect(() => {
     function connect() {
-      ws.current = new WebSocket('wss://real-time-icu-api.onrender.com/ws')
+      ws.current = new WebSocket(WS_URL)
 
       ws.current.onopen = () => {
-        console.log('Connected to ICU stream')
+        console.log('Connected to ICU stream:', WS_URL)
         setConnected(true)
       }
 
@@ -58,13 +62,17 @@ export function useICUStream() {
 
     connect()
     return () => ws.current?.close()
-  }, [])
+  }, [WS_URL])
 
   const dismissAlarm = async (subjectId: string) => {
-    await fetch(
-      `https://real-time-icu-api.onrender.com/dismiss/${encodeURIComponent(subjectId)}`,
-      { method: 'POST' }
-    )
+    try {
+      await fetch(
+        `${API_URL}/dismiss/${encodeURIComponent(subjectId)}`,
+        { method: 'POST' }
+      )
+    } catch (err) {
+      console.error('Failed to dismiss alarm', err)
+    }
   }
 
   return { patients, connected, dismissAlarm }

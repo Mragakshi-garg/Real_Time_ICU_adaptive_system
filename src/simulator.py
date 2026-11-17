@@ -94,15 +94,20 @@ class ICUSimulator:
         }
 
 
-def run():
+def run(broadcast_callback=None):
     redis_host = os.getenv('REDIS_HOST', 'localhost')
     redis_port = int(os.getenv('REDIS_PORT', 6379))
-    r = redis.Redis(host=redis_host, port=redis_port,
-                    decode_responses=True)
+    r = None
+    try:
+        r_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
+        r_client.ping()
+        r = r_client
+        print(f"Connected to Redis [{redis_host}:{redis_port}], publishing to channel '{REDIS_CHANNEL}'")
+    except Exception as e:
+        print(f"Redis not available ({e}). Using in-memory broadcast fallback.")
 
     patients = [ICUSimulator(i + 1) for i in range(NUM_PATIENTS)]
-    print(f"Streaming {NUM_PATIENTS} patients → Redis "
-          f"[{redis_host}:{redis_port}] channel '{REDIS_CHANNEL}'")
+    print(f"Streaming {NUM_PATIENTS} patients...")
 
     predictor = RiskPredictor(
         model_path=os.path.join(os.path.dirname(__file__), '../data/icu_risk_model.pkl')
@@ -118,7 +123,16 @@ def run():
                 systolic_bp=record['systolic_bp'],
                 mean_bp=record['mean_bp']
             )
-            r.publish(REDIS_CHANNEL, json.dumps(record))
+            if r is not None:
+                try:
+                    r.publish(REDIS_CHANNEL, json.dumps(record))
+                except Exception:
+                    pass
+            if broadcast_callback is not None:
+                try:
+                    broadcast_callback(record)
+                except Exception:
+                    pass
             print(f"  {record['subject_id']} | "
               f"HR={record['heart_rate']} "
               f"SpO2={record['spo2']} "
